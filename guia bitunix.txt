@@ -1,0 +1,2559 @@
+Introducción a API
+Bienvenido a la Documentación 🎉 de la API de Bitunix Esta documentación de OpenAPI ofrece una guía completa para integrarse con nuestro sistema. Aquí encontrarás información detallada sobre los endpoints disponibles, formatos de solicitud/respuesta, requisitos de autenticación y ejemplos de uso para ayudarte a conectar sin problemas con nuestros servicios.
+
+Tanto si eres un desarrollador que explora posibilidades de integración como si optimiza tu flujo de trabajo actual, esta documentación es tu referencia integral para aprovechar al máximo nuestra API.
+
+OpenAPI Demo
+Puedes rellenar tu clave API y el secreto de la API para intentar ejecutar la demo oficial proporcionada.
+
+Github Demo
+
+Preparación para el acceso
+Si necesitas usar la API, por favor inicia sesión para completar la aplicación de la clave API y la configuración, y luego desarrolla y opera según los detalles de este documento.
+
+Puedes hacer clic aquí para crear una clave API.
+
+Por favor, recuerda la siguiente información después de haber creado con éxito la clave API:
+
+APIKey: Identidad para transacciones API, generada por algoritmo aleatorio.
+SecretKey: clave privada, generada aleatoriamente por el sistema, utilizada para la generación de firmas.
+Riesgos: Estas dos claves están estrechamente relacionadas con la seguridad de tu cuenta, por favor ten en cuenta que no las reveles a otros en ningún momento. Cualquier fuga de estas dos llaves puede causar la pérdida de tus activos. Si encuentras alguna filtración de APIKey, por favor elimina el APIKey lo antes posible.
+
+Tipo de interfaz
+Público
+Interfaz privada
+Interfaz Pública
+La interfaz pública puede utilizarse para obtener información de configuración y datos de mercado. Las solicitudes públicas pueden invocarse sin autenticación.
+
+Interfaz privada
+La interfaz privada puede utilizarse para la gestión de pedidos y de cuentas. Cada solicitud privada debe ser [firmada] (sign.md) utilizando una forma canónica de autenticación. La interfaz privada requiere autenticación usando tu APIKey.
+
+Nombre de dominio API
+Puedes hacerlo tú mismo usando el método de acceso a la API REST.
+
+Nombre de dominio	REST API
+Dominio Principal	https://fapi.bitunix.com
+Validación de API
+El encabezado de todas las peticiones REST debe contener las siguientes claves:
+
+Clave API: Clave API de la solicitud
+Nonce: cadena aleatoria, de 32 bits, generada por el llamador
+Marca de tiempo: marca de tiempo actual, milisegundos
+sign: cadena de firma (ver descripción de la firma)
+Tipo de contenido: Configurado uniformemente en application/json.
+Solicitud de interacción
+Todas las solicitudes se basan en el protocolo Https, el Type-de Contenido en la cabecera de la solicitud POST debe establecerse en: 'application/json'.
+
+Descripción de la solicitud de interacción
+Parámetro de solicitud: encapsular el parámetro según el parámetro de solicitud de la interfaz.
+Enviar parámetros de solicitud: enviar los parámetros encapsulados de la solicitud al servidor a través de GET/POST.
+Respuesta del servidor: El servidor primero realiza la verificación de seguridad de parámetros sobre los datos de solicitud del usuario y devuelve los datos de respuesta en formato JSON al usuario según la lógica de negocio tras superar la verificación.
+Procesamiento de datos: Procesar los datos de respuesta del servidor.
+Éxito
+El código de estado HTTP 200 indica una respuesta exitosa y puede contener contenido. Si la respuesta contiene contenido, se mostrará en el contenido correspondiente de retorno.
+
+Códigos de error comunes
+400 Solicitud mala - Formato de solicitud inválido
+403 Prohibido - No tienes acceso al recurso solicitado.
+404 No encontrado No se ha encontrado ninguna solicitud
+Error interno del servidor 500 - Tuvimos un problema con el error interno del servidor; Cuerpo si fallido con mensaje de descripción de error
+Consulta Código de error para más detalles.
+Especificación estandarizada
+Marca temporal
+La marca de tiempo en la firma de la solicitud está en milisegundos y está estandarizada a tiempo UTC.
+
+Formatos de petición
+Actualmente, solo hay dos formatos de solicitud: GET y POST.
+
+GET: Los parámetros se transfieren al servidor mediante queryString en la ruta.
+POST: Los parámetros se transfieren al servidor enviando el cuerpo en formato json.
+
+
+***Introducción de la firma
+OpenAPI Demo
+Puedes rellenar tu clave API y el secreto de la API para intentar ejecutar la demo oficial proporcionada.
+
+Github Demo
+
+Parámetros públicos de firma de API Restful
+Cabeceras:
+
+Nombre	Tipos	Obligatorio	Descripción
+API key	Cuerda	Y	Aplicación de la clave API
+Nuncio	Cuerda	Y	Cadena aleatoria, 32 bits
+Marca temporal	Cuerda	Y	Marca de tiempo actual, milisegundos
+Signo	Cuerda	Y	Cuerda singanture
+Pasos emblemáticos:
+
+Todos los queryParams están ordenados en orden ASCII ascendente por clave, Ejemplo: String queryParams = "id1uid200"
+Parámetros en cuerpo, comprimidos en una cadena, recuerda eliminar todos los espacios, Ejemplo:String body = {"uid":"2899","arr":[{"id":1,"name":"maple"},{"id":2,"name":"lily"}]}.
+¡ Atención: El formato del cuerpo de la solicitud debe ser idéntico al de la cadena de firma.
+Firma, necesita cifrarse dos veces
+String digest = SHA256(nonce + timestamp + api-key + queryParams + body)
+Signo de cadena = SHA256(digest + secretKey)
+Nota: secretKey está incluido al solicitar la clave de la API. Por favor, guárdalos de forma segura y no los paséis de mano en mano.
+Ejemplo emblemático
+Ve:
+
+
+package main
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+)
+
+func main() {
+	nonce := "123456"
+	timestamp := "20241120123045"
+	apiKey := "yourApiKey"
+	secretKey := "yourSecretKey"
+	queryParams := "id1uid200" 
+	body := "{\"uid\":\"2899\",\"arr\":[{\"id\":1,\"name\":\"maple\"},{\"id\":2,\"name\":\"lily\"}]}"
+
+	digestInput := nonce + timestamp + apiKey + queryParams + body
+
+	digest := sha256Hex(digestInput)
+
+	signInput := digest + secretKey
+	sign := sha256Hex(signInput)
+
+	fmt.Println("Digest:", digest)
+	fmt.Println("Sign:", sign)
+}
+
+func sha256Hex(input string) string {
+	hash := sha256.Sum256([]byte(input))
+	return hex.EncodeToString(hash[:])
+}
+Python:
+
+
+import hashlib
+
+def sha256_hex(input_string):
+    return hashlib.sha256(input_string.encode('utf-8')).hexdigest()
+
+def main():
+    nonce = "123456"
+    timestamp = "20241120123045"
+    api_key = "yourApiKey"
+    secret_key = "yourSecretKey"
+    query_params = "id1uid200" 
+    body = '{"uid":"2899","arr":[{"id":1,"name":"maple"},{"id":2,"name":"lily"}]}'
+
+    digest_input = nonce + timestamp + api_key + query_params + body
+
+    digest = sha256_hex(digest_input)
+
+    sign_input = digest + secret_key
+    sign = sha256_hex(sign_input)
+
+    print("Digest:", digest)
+    print("Sign:", sign)
+
+if __name__ == "__main__":
+    main()
+Parámetros de Singatura de la API de WebSocket
+Las solicitudes de la API de WebSocket requieren autenticación, y los siguientes campos deben incluirse en todos los parámetros de la solicitud:params
+
+Nombre	Tipo	Obligatorio	Descripción
+apiKey	Cuerda	Y	Clave API
+timestamp	Cuerda	Y	Timestapmp
+nonce	Cuerda	Y	Cadena aleatoria
+sign	Cuerda	Y	Cadena característica
+Pasos emblemáticos:
+
+Ordena todos los campos excepto el campo en orden ASCII ascendente por Key, recuerda eliminar todos los espacios, Ejemplo: String params = "apiKey9a25209b66004da404d9ddcb48d1e11fnonce123456symbolBTCtimestamp172428570000"paramssign
+Firma, necesita cifrarse dos veces
+Resumen de cadenas = SHA256(nonce + marca de tiempo + apiKey + parámetros)
+Signo de cadena = SHA256(digest + secretKey)
+Nota: secretKey está incluido al solicitar apiKey. Por favor, guárdalos de forma segura y no los paséis de mano en mano.
+
+-**ErrorCode	Descripción	httpStatusCode
+0	Éxito	200
+403	Esta clave API no soporta esta operación	200
+10001	Error de red	200
+10002	Error de parámetro	200
+10003	La clave API no puede estar vacía	200
+10004	La IP actual no está en la lista blanca de APIKEY	200
+10005	Demasiadas peticiones, por favor inténtalo de nuevo más tarde	200
+10006	Pide demasiadas veces	200
+10007	Error de firma de signos	200
+10008	{value} no cumple con la regla, opcional [correctValue]	200
+20001	El mercado no existe	200
+20002	El importe de las posiciones actuales ha superado el límite máximo de apertura, por favor ajuste el límite de riesgo	200
+20003	Equilibrio insuficiente	200
+20004	Comerciante insuficiente	200
+20005	Palanca inválida	200
+20006	No puedes cambiar el modo apalancamiento o margen porque hay órdenes abiertas	200
+20007	Pedido no encontrado, por favor pruébalo más tarde	200
+20008	Cantidad insuficiente	200
+20009	Existe el modo de posiciones, por lo que el modo de posiciones no puede actualizarse	200
+20010	Fallida la activación, el saldo disponible en la cuenta de futuros no cumple las condiciones para la activación del cupón	200
+20011	No se permite la cuenta operar	200
+20012	Estos futuros no permiten negociar	200
+20013	Función deshabilitada debido a la solicitud pendiente de eliminación de cuenta	200
+20014	Cuenta eliminada	200
+20015	Este futuro no está respaldado	200
+20016	El pedido por lotes superó el tamaño máximo	200
+30001	No hicieron el pedido. Por favor, ajusta el precio de la orden o el apalancamiento, ya que el precio de la orden negociada puede liquidarse inmediatamente.	200
+30002	Precio por debajo del precio liquidado	200
+30003	Precio por encima del precio liquidado	200
+30004	No existe la posición	200
+30005	El precio de desencadenante está más cerca del precio actual y puede activarse inmediatamente	200
+30006	Por favor, selecciona TP o SL	200
+30007	El precio de disparo del TP es superior al precio medio de entrada	200
+30008	El precio de disparo del TP es inferior al precio medio de entrada	200
+30009	El precio de disparo de SL es inferior al precio medio de entrada	200
+30010	El precio de disparo de SL es superior al precio medio de entrada	200
+30011	Estado de orden anormal	200
+30012	Ya añadido a mi favorito	200
+30013	Excedió la cantidad máxima de pedido	200
+30014	Precio máximo de la orden de compra	200
+30015	Precio de Mini Orden de Venta	200
+30016	La cantidad debería ser mayor que	200
+30017	La cantidad no puede ser menor que la cantidad mínima	200
+30018	Orden fallida. No se ha abierto ninguna plaza. Cancela la configuración [Solo reducir] y vuelve a intentarlo más tarde	200
+30019	Orden fallida. Una orden [Solo reducir] no puede estar en la misma dirección que la posición abierta	200
+30020	El precio de disparo para TP debería ser superior al precio de marca:	200
+30021	El precio de activación para TP debería ser inferior al precio de marca:	200
+30022	El precio de disparo para SL debería ser superior al precio de marca:	200
+30023	El precio de disparo para SL debería ser inferior al precio de marca:	200
+30024	El precio de disparo para SL debería ser inferior al precio de liq:	200
+30025	El precio de disparo para SL debería ser superior al precio de liq:	200
+30026	El precio del TP debe ser mayor que el precio anterior:	200
+30027	El precio del TP debe ser superior al precio de marca:	200
+30028	El precio de SL debe ser inferior al último precio:	200
+30029	El precio de SL debe ser inferior al precio de marca:	200
+30030	El precio de SL debe ser mayor que el precio anterior:	200
+30031	El precio de SL debe ser mayor que el precio de marca:	200
+30032	El precio del TP debe ser inferior al precio anterior:	200
+30033	El precio del TP debe ser inferior al precio de marca:	200
+30034	El precio del TP debe ser inferior al precio de marca:	200
+30035	El precio de SL debe ser mayor que el precio de activación:	200
+30036	El precio del TP debe ser mayor que el precio de desencadenante:	200
+30037	El precio del TP debe ser mayor que el precio de desencadenante:	200
+30038	La cantidad de TP/SL debe ser menor que el tamaño del puesto.	200
+30039	La cantidad de orden no puede ser mayor que la cantidad máxima de orden:	200
+30040	Está prohibido el comercio de futuros, por favor contacte con el servicio de atención al cliente.	200
+30041	El precio de disparo debe ser mayor que 0	200
+30042	Duplicado del ID del cliente	200
+40001	Por favor, cancela las órdenes abiertas y cierra todas las posiciones antes de cancelar el lead trading	200
+40002	La cantidad de plomo debe superar los límites	200
+40003	El importe de los pedidos de leads supera los límites.	200
+40004	Por favor, no repitas la operación	200
+40005	La acción no está disponible para el tipo de usuario actual.	200
+40006	La subcuenta llega al límite.	200
+40007	Se está tramitando la liquidación de acciones, el contrato de arrendamiento vuelve a intentarlo más tarde	200
+40008	Tras la transferencia, el saldo de la cuenta será inferior al importe del pedido, por favor vuelve a ingresar.	200
+
+***Ajustar margen de posición
+Límite de tasa: 5 requisitos/seg/uid
+
+Descripción
+Suma o reduce el margen (solo para el modo de margen aislado)
+
+Solicitud HTTP
+POST /api/v1/futures/account/adjust_position_margin
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+marginCoin	Cuerda	Cierto	Moneda de margen
+Cantidad	Cuerda	Cierto	Cantidad de margen, positivo significa aumento y negativo significa disminución
+Side	Cuerda	falso	Lado
+de posición LARGO
+CORTO
+Se requiere cualquiera de los dos lados o id de posición
+PositionId	Cuerda	falso	Identificación
+de posición: Se requiere cualquiera de los dos lados o identificación de posición
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/account/adjust_position_margin' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","amount":"-100","marginCoin":"USDT","side":"LONG"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+N/A		
+Ejemplo de respuesta
+
+
+{"code":0,"data":"","msg":"Success"}
+
+***Palanca de cambio
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Ajusta la palanca sobre el símbolo dado
+
+Solicitud HTTP
+POST /api/v1/futures/account/change_leverage
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+marginCoin	Cuerda	Cierto	Moneda de margen
+Símbolo	Cuerda	Cierto	Par de negociación
+Apalancamiento	int	Cierto	Apalancamiento
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/account/change_leverage' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","leverage":12,"marginCoin":"USDT"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+marginCoin	Cuerda	Moneda de margen
+Símbolo	Cuerda	Par de negociación
+Apalancamiento	int	Apalancamiento
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"marginCoin":"USDT","leverage":12,"symbol":"BTCUSDT"}],"msg":"Success"}
+
+*** Cambiar el modo de margen
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Esta interfaz no puede usarse cuando los usuarios tienen una posición abierta o una orden
+
+Solicitud HTTP
+POST /api/v1/futures/account/change_margin_mode
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+marginMode	Cuerda	Cierto	Modo
+de margen CRUCE DE AISLAMIENTO
+Símbolo	Cuerda	Cierto	Par de negociación
+marginCoin	Cuerda	Cierto	Moneda de margen
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/account/change_margin_mode' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"marginMode":"ISOLATION","symbol":"BTCUSDT","marginCoin":"USDT"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+marginMode	Cuerda	Modo
+de margen CRUCE DE AISLAMIENTO
+Símbolo	Cuerda	Par de negociación
+marginCoin	Cuerda	Moneda de margen
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"positionMode":"ISOLATION"}],"msg":"Success"}
+
+*** Cambio de modo de posición
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Ajusta el modo de posición entre 'modo unidireccional' y 'modo seto'
+
+Si quieres cambiar el modo de posición del usuario en todos los contratos de símbolos, necesitas especificar posiciones en modo seto o posiciones unidireccionales. Nota: El modo de posición no puede ajustarse cuando hay una orden de posición abierta bajo el tipo de producto. Cambia el modo de posición del usuario para todos los futuros de símbolos: modo de cobertura o modo unidireccional. Cuando los usuarios mantienen posiciones u órdenes en cualquier lado de cualquier par de trading en el tipo de producto específico, la solicitud puede fallar.
+
+Solicitud HTTP
+POST /api/v1/futures/account/change_position_mode
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+PositionMode	Cuerda	Cierto	Modo
+de posición ONE_WAY
+COBERTURA
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/account/change_position_mode' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"positionMode":"HEDGE"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+PositionMode	Cuerda	Modo
+de posición ONE_WAY
+COBERTURA
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"positionMode":"HEDGE"}],"msg":"Success"}
+
+***Consigue el modo de apalancamiento y margen
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+consigue Modo Apalancamiento y Margen
+
+Solicitud HTTP
+GET /api/v1/futures/account/get_leverage_margin_mode
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+marginCoin	Cuerda	Cierto	Moneda de margen
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/account/get_leverage_margin_mode?symbol=BTCUSDT&marginCoin=USDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Símbolo	Cuerda	Par de negociación
+marginCoin	Cuerda	Moneda de margen
+Apalancamiento	int	Apalancamiento
+marginMode	Cuerda	AISLAMIENTO o CRUZ
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"symbol":"BTCUSDT","marginCoin":"USDT","leverage":10,"marginMode":"ISOLATION"},"msg":"Success"}
+
+*** Consigue una cuenta individual
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Obtén los datos de la cuenta con la 'marginCoin' proporcionada
+
+Solicitud HTTP
+GET /api/v1/futures/account
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+marginCoin	Cuerda	Cierto	Moneda de margen
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/account?marginCoin=USDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+marginCoin	Cuerda	Moneda de margen
+Disponible	Cuerda	Cantidad disponible en la cuenta.
+Este campo + crossUnrealizedPNL = Cantidad máxima real abierta
+congelado	Cuerda	Cantidad bloqueada de pedidos
+Margen	Cuerda	Cantidad bloqueada de posiciones
+Transferencia	Cuerda	Cantidad máxima transferible
+PositionMode	Cuerda	Modo
+de posición ONE_WAY
+HEDGE
+cruzUnrealizedPNL	Cuerda	PNL no realizado para posiciones cruzadas
+aislamientoPNL no realizado	Cuerda	PNL no realizado para posiciones de aislamiento
+Bonus	Cuerda	Bono de futuros
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"marginCoin":"USDT","available":"1000","frozen":"0","margin":"10","transfer":"1000","positionMode":"HEDGE","crossUnrealizedPNL":"2","isolationUnrealizedPNL":"0","bonus":"0"}],"msg":"Success"}
+
+***Consigue profundidad
+Límite de tarifa: 10 requisiciones/segundo/IP
+
+Descripción
+La interfaz se utiliza para conseguir el libro de pedidos futuro.
+
+Solicitud HTTP
+GET /api/v1/futures/market/depth
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de trading, basado en el symbolName, es decir, BTCUSDT
+Límite	Cuerda	falso	Valor de enumeración de engranajes fijos: 1/5/15/50/max, pasar el máximo devuelve el engranaje máximo del par de intercambio. Cuando la profundidad real no cumple el límite, se regresa según el engranaje real. Si se pasa el máximo, se devolverá el nivel máximo del par de trading.
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/market/depth?symbol=BTCUSDT&limit=max'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+asks.index[0]	Cuerda	Precio de venta
+asks.index[1]	Cuerda	Cantidad solicitada
+bids.index[0]	Cuerda	precio de oferta
+bids.index[1]	Cuerda	Cantidad de la puja
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"asks":[[0.1001,0.1],[0.1002,10]],"bids":[[0.1,1],[0.0999,10.23]]},"msg":"Success"}
+
+***Obtener la tasa de financiación
+Límite de tarifa: 10 requisiciones/segundo/IP
+
+Descripción
+Consigue la tasa de financiación actual del contrato
+
+Solicitud HTTP
+GET /api/v1/futures/market/funding_rate
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de trading, basado en el symbolName, es decir, BTCUSDT
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/market/funding_rate?symbol=BTCUSDT'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Símbolo	Cuerda	Par de monedas
+markPrice	decimal	Mark Price
+lastPrice	decimal	Último precio
+Tasa de financiación	decimal	Tasas actuales de financiación
+nextFundingTime	int64	próximo plazo de liquidación de la financiación (ms)
+Intervalo de financiación	int32	Intervalo de liquidación de financiación (hora)
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"symbol":"BTCUSDT","markPrice":"60000","lastPrice":"60001","fundingRate":"0.0005","fundingInterval":8,"nextFundingTime":"1770710400000"}],"msg":"Success"}
+
+**Obtener la tasa de financiación
+Límite de tarifa: 10 requisiciones/segundo/IP
+
+Descripción
+Consigue la tasa de financiación actual del contrato
+
+Solicitud HTTP
+GET /api/v1/futures/market/funding_rate/batch
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/market/funding_rate/batch'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Símbolo	Cuerda	Par de monedas
+markPrice	decimal	Mark Price
+lastPrice	decimal	Último precio
+Tasa de financiación	decimal	Tasas actuales de financiación
+nextFundingTime	int64	próximo plazo de liquidación de la financiación (ms)
+Intervalo de financiación	int32	Intervalo de liquidación de financiación (hora)
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"symbol":"BTCUSDT","markPrice":"60000","lastPrice":"60001","fundingRate":"0.0005","fundingInterval":8,"nextFundingTime":"1770710400000"}],"msg":"Success"}
+
+** Llama a Kline
+Límite de tarifa: 10 requisiciones/segundo/IP
+
+Descripción
+La interfaz se usa para obtener la historia futura de Kline.
+
+Solicitud HTTP
+GET /api/v1/futures/market/kline
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de trading, basado en el symbolName, es decir, BTCUSDT
+Hora de inicio	int64	falso	La hora de inicio es para consultar las líneas k después de este tiempo, el formato milisegundo de la marca de tiempo Unix, como 1672410780000
+fin del tiempo	int64	falso	El momento final es consultar las líneas k antes de este tiempo, el formato milisegundo de la marca de tiempo Unix, como 1672410780000
+intervalo	Cuerda	Cierto	Intervalos kline como 1m 5m 15m 30m 1h 2h 4h 6h 8h 12h 1d 3d 1w 1M
+Límite	int	falso	Por defecto: 100, máximo: 200
+Tipo	Cuerda	falso	Tipo Kline, valores: LAST_PRICE, MARK_PRICE; Por defecto: LAST_PRICE
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/market/kline?symbol=BTCUSDT&startTime=1&endTime=10234&interval=15m'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+abierto	decimal	Precio abierto
+Alto	decimal	Precio alto
+Grave	decimal	Precio bajo
+Cierre	decimal	Precio cerrado
+quoteVol	decimal	Cantidad de la negociación
+quoteVol	Cuerda	Volumen de negociación de la moneda (últimas 24 horas)
+baseVol	Cuerda	Volumen de negociación de las últimas 24 horas
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"open":60000,"high":60001,"close":60000,"low":59989.2,"time":111111,"quoteVol":"1","baseVol":"60000","type":"LAST_PRICE"}],"msg":"Success"}
+
+*** Consigue Tickers
+Límite de tarifa: 10 requisiciones/segundo/IP
+
+Descripción
+La interfaz se utiliza para obtener los tickers futuros de pares de trading.
+
+Solicitud HTTP
+GET /api/v1/futures/market/tickers
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolos	Cuerda	falso	Pares de intercambio, basados en el nombreSymbol, es decir, BTCUSDT, ETHUSDT, XRPUSDT
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/market/tickers?symbols=BTCUSDT,ETHUSDT'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Símbolo	Cuerda	Nombre del par de monedas, es decir, BTCUSDT
+markPrice	Cuerda	Mark Price
+lastPrice	Cuerda	Último precio
+abierto	Cuerda	Precio de entrada de las últimas 24 horas
+Última	Cuerda	Último precio
+quoteVol	Cuerda	Volumen de negociación de la moneda (últimas 24 horas)
+baseVol	Cuerda	Volumen de negociación de las últimas 24 horas
+Alto	Cuerda	24h alto
+Grave	Cuerda	24h bajo
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"symbol":"BTCUSDT","markPrice":"57892.1","lastPrice":"57891.2","open":"6.31","last":"6.31","quoteVol":"0","baseVol":"0","high":"6.31","low":"6.31"},{"symbol":"ETHUSDT","markPrice":"2000","lastPrice":"2020.1","open":"6.31","last":"6.31","quoteVol":"0","baseVol":"0","high":"6.31","low":"6.31"}],"msg":"Success"}
+
+****Consigue pares de trading
+Límite de tarifa: 10 requisiciones/segundo/IP
+
+Descripción
+La interfaz se utiliza para obtener detalles futuros de pares de trading.
+
+Solicitud HTTP
+GET /api/v1/futures/market/trading_pairs
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolos	Cuerda	falso	Pares de intercambio, basados en el nombreSymbol, es decir, BTCUSDT, ETHUSDT, XRPUSDT
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/market/trading_pairs?symbols=BTCUSDT,ETHUSDT'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Símbolo	Cuerda	Nombre del par de monedas, es decir, BTCUSDT
+Base	Cuerda	Moneda base Se refiere específicamente a los ETH, como en ETHUSDT.
+Cita	Cuerda	Moneda base Se refiere específicamente al USDT como en ETHUSDT
+minVolumeNComercio	Cuerda	Cantidad mínima de apertura (moneda base)
+minBuyPriceOffset	Cuerda	Compensación mínima del precio para órdenes de compra
+maxVenderPrecioOffset	Cuerda	Compensación máxima del precio para órdenes de venta
+maxLimitOrderVolume	Cuerda	Cantidad máxima base de orden límite
+maxVolumenPedidosMercadoT	Cuerda	Cantidad máxima de la base de órdenes de mercado
+basePrecisión	int	Precisión máxima de la cantidad de apertura
+citaPrecisión	int	Precisión máxima del precio de la orden
+Apalancamiento máximo	int	Máxima ventaja
+Palanca mínima	int	Palanca mínima
+defaultLeverage	int	Apalancamiento predeterminado
+defaultMarginMode	Cuerda	Modo de margen por defecto Cruzamiento de aislamiento
+precioProtectScope	Cuerda	Alcance de protección de precios.
+Por ejemplo: precio actual de marca es:10000 precio ProtectScope = 0,02, el precio mínimo de la orden de venta = 10000*(1-0,02)=9800; el precio máximo de la orden de compra = 10000*(1+0,02) = 10200
+Símbolo Estado	Cuerda	OPEN: operar normal CANCEL_ONLY: cancelar solo STOP: no puede abrir/cerrar posición
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"symbol":"BTCUSDT","base":"BTC","quote":"USDT","minTradeVolume":"0.0001","minBuyPriceOffset":"-0.95","maxSellPriceOffset":"100","maxLimitOrderVolume":"100000","maxMarketOrderVolume":"50000","basePrecision":4,"quotePrecision":1,"minLeverage":1,"maxLeverage":125,"defaultLeverage":20,"defaultMarginMode":1,"priceProtectScope":"0.02","symbolStatus":"OPEN"}],"msg":"Success"}
+
+** Obtén puestos de Historia
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Obtén puestos de Historia
+
+Solicitud HTTP
+GET /api/v1/futures/position/get_history_positions
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+PositionId	Cuerda	falso	ID de posición
+Hora de inicio	int64	falso	Marca de tiempo de inicio (posición de crear tiempo)
+Marca de tiempo Unix en formato de milisegundos, por ejemplo, 1597026383085
+fin del tiempo	int64	falso	Marca de tiempo de inicio (posición de crear tiempo)
+Marca de tiempo Unix en formato de milisegundos, por ejemplo, 1597026683085
+saltar	int64	falso	Número de órdenes de salto por defecto: 0
+Límite	int64	falso	Número de consultas: Máximo: 100, por defecto: 10
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/position/get_history_positions?symbol=BTCUSDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Lista de posiciones	Lista	Lista de posiciones
+>positionId	Cuerda	ID de posición
+>símbolo	Cuerda	Par de negociación
+>maxQty	Cuerda	Cantidad máxima de posición
+>entradaPrecio	Cuerda	Precio medio de entrada
+>cerrar Precio	Cuerda	Precio medio de cierre
+>liqqty	Cuerda	Cantidad de liquidación
+>lado	Cuerda	LARGO CORTO
+>margenMode	Cuerda	CRUCE DE AISLAMIENTO
+>ModoPosiciónT	Cuerda	ONE_WAY HEDGE
+>apalancamiento	int32	Apalancamiento
+>fee	Cuerda	Comisiones de transacción deducidas: comisiones de transacción deducidas durante la posición
+>financiación	Cuerda	Cuota total de financiación durante el puesto
+>realizadoPNL	Cuerda	PnL realizado (excluyendo la comisión de financiación y la comisión de transacción)
+>liqPrice	Cuerda	Precio
+estimado de liquidación Si el valor <= 0, significa que la posición está en bajo riesgo y no hay precio de liquidación en este momento
+>ctime	int64	crear marca temporal
+>mtime	int64	Última marca de tiempo de la modificación
+total	int64	Recuento total
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"positionList":[{"positionId":"12345678","symbol":"BTCUSDT","maxQty":"0.5","entryPrice":"60000","closePrice":"61000","liqQty":"0","side":"LONG","positionMode":"HEDGE","marginMode":"ISOLATION","leverage":100,"fee":"0.1","funding":"-0.2","realizedPNL":"102.9","liqPrice":"22209","ctime":1691382137448,"mtime":1691382137448}],"total":12},"msg":"Success"}
+
+** Consigue puestos pendientes
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Consigue puestos pendientes
+
+Solicitud HTTP
+GET /api/v1/futures/position/get_pending_positions
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+PositionId	Cuerda	falso	ID de posición
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/position/get_pending_positions?symbol=BTCUSDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+PositionId	Cuerda	ID de posición
+Símbolo	Cuerda	Par de negociación
+Cantidad	Cuerda	Cantidad de posición
+entryValue	Cuerda	Cantidad disponible para los puestos
+Side	Cuerda	LARGO CORTO
+marginMode	Cuerda	CRUCE DE AISLAMIENTO
+PositionMode	Cuerda	ONE_WAY HEDGE
+Apalancamiento	int32	Apalancamiento
+Tasa	Cuerda	Comisiones de transacción deducidas: comisiones de transacción deducidas durante la posición
+Financiación	Cuerda	Cuota total de financiación durante el puesto
+realizedPNL	Cuerda	PnL realizado (excluyendo la comisión de financiación y la comisión de transacción)
+Margen	Cuerda	Activo bloqueado de la posición
+PNL no realizado	Cuerda	PnL no realizado
+liqPrice	Cuerda	Precio
+estimado de liquidación Si el valor <= 0, significa que la posición está en bajo riesgo y no hay precio de liquidación en este momento
+margen Tasa	Cuerda	Ratio de márgenes
+avgOpenPrice	Cuerda	Precio medio de apertura
+ctime	int64	crear marca temporal
+mtime	int64	Última marca de tiempo de la modificación
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"positionId":"12345678","symbol":"BTCUSDT","qty":"0.5","entryValue":"30000","side":"LONG","positionMode":"HEDGE","marginMode":"ISOLATION","leverage":100,"fee":"0.1","funding":"-0.2","realizedPNL":"102.9","margin":"300","unrealizedPNL":"1.5","liqPrice":"22209","marginRate":"0.01", "avgOpenPrice": "1.0","ctime":1691382137448,"mtime":1691382137448}],"msg":"Success"}
+
+***Consigue el puesto como tercero
+Límite de tarifa: 10 requisiciones/segundo/IP
+
+Descripción
+Consigue el puesto como tercero
+
+Solicitud HTTP
+GET /api/v1/futures/position/get_position_tiers
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/position/get_position_tiers?symbol=BTCUSDT'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Símbolo	Cuerda	Par de negociación
+Nivel	int32	Nivel
+startValue	Cuerda	Valor mínimo
+endValue	Cuerda	Valor máximo
+Apalancamiento	int32	Apalancamiento
+RateMarginMantenimiento	Cuerda	Tasa de margen de mantenimiento: La cantidad del margen corresponde al nivel de cantidad de posición. Cuando la tasa de margen de una posición es inferior a la tasa de margen de mantenimiento, se desencadena una liquidación parcial forzada o total.
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"symbol":"BTCUSDT","level":1,"startValue":"0","endValue":"50000","leverage":125,"maintenanceMarginRate":"0.004"},{"symbol":"BTCUSDT","level":2,"startValue":"50000","endValue":"200000","leverage":100,"maintenanceMarginRate":"0.005"}],"msg":"Success"}
+
+*** Cancelar pedido TP/SL
+Límite de tasa: 10 requisitos/seg/UID
+
+Descripción
+Cancelar pedido
+TP/SL La respuesta exitosa de la interfaz no es necesariamente igual al éxito de la operación; por favor, utilice el mensaje push websocket como un juicio preciso del éxito de la operación.
+
+Solicitud HTTP
+POST /api/v1/futures/tpsl/cancel_order
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de monedas
+orderId	Cuerda	Cierto	ID de pedido TP/SL
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/tpsl/cancel_order' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","orderId":"12"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+orderId	Cuerda	ID de pedido TP/SL
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderId":"11111"},"msg":"Success"}
+
+** Obtener historial de pedidos TP/SL
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Obtener historial de pedidos TP/SL
+
+Solicitud HTTP
+GET /api/v1/futures/tpsl/get_history_orders
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+Side	int32	falso	Lado de orden
+PositionMode	int32	falso	Modo de posición de orden
+Hora de inicio	int64	falso	Inicio marca de tiempo
+Unix en formato de milisegundos, por ejemplo, 1597026383085
+fin del tiempo	int64	falso	Marca de tiempo de inicio
+Unix en formato de milisegundos, por ejemplo, 1597026683085
+saltar	int64	falso	Número de órdenes de salto por defecto: 0
+Límite	int64	falso	Número de consultas: Máximo: 100, por defecto: 10
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/tpsl/get_history_orders?symbol=BTCUSDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+OrderList	Lista	Lista de pedidos de TP/SL
+>id	Cuerda	ID de orden
+>positionId	Cuerda	ID de posición
+>símbolo	Cuerda	Par de monedas
+>base	Cuerda	Base
+> cita	Cuerda	Cita
+>tpPrice	Cuerda	Precio de disparo por beneficio
+>tpStopType	Cuerda	Tipo
+de disparador de beneficio LAST_PRICE
+MARK_PRICE
+>slPrice	Cuerda	Precio de disparo stop-loss
+>slStopType	Cuerda	Disparador stop-loss tipo
+
+LAST_PRICE MARK_PRICE
+>tpOrderType	Cuerda	Orden de toma de beneficio tipo
+LÍMITE
+MERCADO
+El impago es mercado.
+>tpOrderPrice	Cuerda	Precio de orden de toma de beneficios
+>slOrderType	Cuerda	Orden stop-loss tipo
+LIMIT
+MARKET
+El impago es mercado.
+>slOrderPrice	Cuerda	Precio de orden stop-loss
+>tpQty	Cuerda	Cantidad de orden de beneficio (moneda base)
+Al menos uno de o es necesario.tpQtyslQty
+>slQty	Cuerda	Cantidad de orden stop-loss (moneda base)
+Al menos uno de o es necesario.tpQtyslQty
+> estado	Cuerda	Estado de la orden TP/SL
+>ctime	int64	crear marca temporal
+>triggerTimeHora	int64	Marca temporal del disparador
+total	int64	total
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"positionId":"12345678","symbol":"BTCUSDT","qty":"0.5","entryValue":"30000","side":"LONG","positionMode":"HEDGE","marginMode":"ISOLATION","leverage":100,"fee":"0.1","funding":"-0.2","realizedPNL":"102.9","margin":"300","unrealizedPNL":"1.5","liqPrice":"22209","marginRate":"0.01","ctime":1691382137448,"mtime":1691382137448}],"msg":"Success"}
+
+**** Obtener una orden pendiente de TP/SL
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Obtener una orden pendiente de TP/SL
+
+Solicitud HTTP
+GET /api/v1/futures/tpsl/get_pending_orders
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+PositionId	Cuerda	falso	ID de posición
+Side	int32	falso	Lado de orden
+PositionMode	int32	falso	Modo de posición de orden
+saltar	int64	falso	Número de órdenes de salto por defecto: 0
+Límite	int64	falso	Número de consultas: Máximo: 100, por defecto: 10
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/tpsl/get_pending_orders?symbol=BTCUSDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+id	Cuerda	ID de orden
+PositionId	Cuerda	ID de posición
+Símbolo	Cuerda	Par de monedas
+Base	Cuerda	Base
+Cita	Cuerda	Cita
+tpPrice	Cuerda	Precio de disparo por beneficio
+tpStopType	Cuerda	Tipo
+de disparador de beneficio LAST_PRICE
+MARK_PRICE
+slPrice	Cuerda	Precio de disparo stop-loss
+slStopType	Cuerda	Disparador stop-loss tipo
+
+LAST_PRICE MARK_PRICE
+tpOrderType	Cuerda	Orden de toma de beneficio tipo
+LÍMITE
+MERCADO
+El impago es mercado.
+tpOrderPrice	Cuerda	Precio de orden de toma de beneficios
+slOrderType	Cuerda	Orden stop-loss tipo
+LIMIT
+MARKET
+El impago es mercado.
+slOrderPrice	Cuerda	Precio de orden stop-loss
+tpQty	Cuerda	Cantidad de orden de beneficio (moneda base)
+Al menos uno de o es necesario.tpQtyslQty
+SlQty	Cuerda	Cantidad de orden stop-loss (moneda base)
+Al menos uno de o es necesario.tpQtyslQty
+Ejemplo de respuesta
+
+
+{"code":0,"data":[{"id":"123","positionId":"12345678","symbol":"BTCUSDT","base":"BTC","quote":"USDT","tpPrice":"50000","tpStopType":"LAST_PRICE","slPrice":"70000","slStopType":"LAST_PRICE","tpOrderType":"LIMIT","tpOrderPrice":"50000","slOrderType":"LIMIT","slOrderPrice":"70000","tpQty":"0.01","slQty":"0.01"}],"msg":"Success"}
+
+****Modificar el orden TP/SL de la posición
+Límite de tasa: 10 requisitos/seg/UID
+
+Descripción
+Modificar el orden TP/SL de la posición
+
+Solicitud HTTP
+POST /api/v1/futures/tpsl/position/modify_order
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+PositionId	Cuerda	Cierto	ID de posición asociado a take-profit y stop-loss
+tpPrice	Cuerda	falso	Precio de activación
+de beneficio Al menos uno de los o.tpPriceslPrice
+tpStopType	Cuerda	falso	El tipo
+de disparador de beneficio LAST_PRICE
+MARK_PRICE
+El impago es el precio de mercado.
+slPrice	Cuerda	falso	Precio
+de disparo stop-loss Al menos uno de los o es obligatorio.tpPriceslPrice
+slStopType	Cuerda	falso	El tipo de disparador
+stop-loss LAST_PRICE
+MARK_PRICE
+El impago es el precio de mercado.
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/tpsl/position/modify_order' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","positionId":"11","tpPrice":"12","tpStopType":"LAST_PRICE","slPrice":"9","slStopType":"LAST_PRICE"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+orderId	Cuerda	ID de pedido TP/SL
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderId":"11111"},"msg":"Success"}
+
+*** Modificar el orden TP/SL
+Límite de tasa: 10 requisitos/seg/UID
+
+Descripción
+Modificar el orden TP/SL
+
+Solicitud HTTP
+POST /api/v1/futures/tpsl/modify_order
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+orderId	Cuerda	Cierto	ID de pedido TP/SL
+tpPrice	Cuerda	falso	Precio de activación
+de beneficio Al menos uno de los o.tpPriceslPrice
+tpStopType	Cuerda	falso	El tipo
+de disparador de beneficio LAST_PRICE
+MARK_PRICE
+El impago es el precio de mercado.
+slPrice	Cuerda	falso	Precio
+de disparo stop-loss Al menos uno de los o es obligatorio.tpPriceslPrice
+slStopType	Cuerda	falso	El tipo de disparador
+stop-loss LAST_PRICE
+MARK_PRICE
+El impago es el precio de mercado.
+tpOrderType	Cuerda	falso	Orden de toma de beneficio tipo
+LÍMITE
+MERCADO
+El impago es mercado.
+tpOrderPrice	Cuerda	falso	Precio de orden de toma de beneficios
+slOrderType	Cuerda	falso	Orden stop-loss tipo
+LIMIT
+MARKET
+El impago es mercado.
+slOrderPrice	Cuerda	falso	Precio de orden stop-loss
+tpQty	Cuerda	falso	Cantidad de orden de beneficio (moneda base)
+Al menos uno de o es necesario.tpQtyslQty
+SlQty	Cuerda	falso	Cantidad de orden stop-loss (moneda base)
+Al menos uno de o es necesario.tpQtyslQty
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/tpsl/modify_order' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"orderId":"123","tpPrice":"12","tpStopType":"LAST_PRICE","slPrice":"9","slStopType":"LAST_PRICE","tpOrderType":"LIMIT","tpOrderPrice":"11","slOrderType":"LIMIT","slOrderPrice":"8","tpQty":"1","slQty":"1"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+orderId	Cuerda	ID de pedido TP/SL
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderId":"11111"},"msg":"Success"}
+
+
+*** Colocar Posición Orden TP/SL
+Límite de tasa: 10 requisitos/seg/UID
+
+Descripción
+Colocar posición TP/SL Órdenes Cuando se activa, cerrará la posición a precio de mercado según la cantidad de posición en ese momento. Cada puesto solo puede tener una Orden TP/SL de Posición
+
+Solicitud HTTP
+POST /api/v1/futures/tpsl/position/place_order
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+PositionId	Cuerda	Cierto	ID de posición asociado a take-profit y stop-loss
+tpPrice	Cuerda	falso	Precio de activación
+de beneficio Al menos uno de los o.tpPriceslPrice
+tpStopType	Cuerda	falso	El tipo
+de disparador de beneficio LAST_PRICE
+MARK_PRICE
+El impago es el precio de mercado.
+slPrice	Cuerda	falso	Precio
+de disparo stop-loss Al menos uno de los o es obligatorio.tpPriceslPrice
+slStopType	Cuerda	falso	El tipo de disparador
+stop-loss LAST_PRICE
+MARK_PRICE
+El impago es el precio de mercado.
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/tpsl/position/place_order' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","positionId":"111","tpPrice":"12","tpStopType":"LAST_PRICE","slPrice":"9","slStopType":"LAST_PRICE"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+orderId	Cuerda	ID de pedido TP/SL
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderId":"11111"},"msg":"Success"}
+
+** Hacer el pedido TP/SL
+Límite de tasa: 10 requisitos/seg/UID
+
+Descripción
+Hacer el pedido TP/SL
+
+Solicitud HTTP
+POST /api/v1/futures/tpsl/place_order
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+PositionId	Cuerda	Cierto	ID de posición asociado a take-profit y stop-loss
+tpPrice	Cuerda	falso	Precio de activación
+de beneficio Al menos uno de los o.tpPriceslPrice
+tpStopType	Cuerda	falso	El tipo
+de disparador de beneficio LAST_PRICE
+MARK_PRICE
+El impago es el precio de mercado.
+slPrice	Cuerda	falso	Precio
+de disparo stop-loss Al menos uno de los o es obligatorio.tpPriceslPrice
+slStopType	Cuerda	falso	El tipo de disparador
+stop-loss LAST_PRICE
+MARK_PRICE
+El impago es el precio de mercado.
+tpOrderType	Cuerda	falso	Orden de toma de beneficio tipo
+LÍMITE
+MERCADO
+El impago es mercado.
+tpOrderPrice	Cuerda	falso	Precio de orden de toma de beneficios
+slOrderType	Cuerda	falso	Orden stop-loss tipo
+LIMIT
+MARKET
+El impago es mercado.
+slOrderPrice	Cuerda	falso	Precio de orden stop-loss
+tpQty	Cuerda	falso	Cantidad de orden de beneficio (moneda base)
+Al menos uno de o es necesario.tpQtyslQty
+SlQty	Cuerda	falso	Cantidad de orden stop-loss (moneda base)
+Al menos uno de o es necesario.tpQtyslQty
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/tpsl/place_order' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","positionId":"111","tpPrice":"12","tpStopType":"LAST_PRICE","slPrice":"9","slStopType":"LAST_PRICE","tpOrderType":"LIMIT","tpOrderPrice":"11","slOrderType":"LIMIT","slOrderPrice":"8","tpQty":"1","slQty":"1"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+orderId	Cuerda	ID de pedido TP/SL
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderId":"11111"},"msg":"Success"}
+
+*** Pedido por lotes
+Límite de tarifa: 1 requisito/segundo/uid
+
+Descripción
+Orden de colocación
+
+Solicitud HTTP
+POST /api/v1/futures/trade/batch_order
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+OrderList	Lista	Cierto	Lista de pedidos, duración máxima: 5
+>	Cuerda	Cierto	Cantidad (moneda base)
+> precio	Cuerda	falso	Precio del pedido.
+Obligatorio si el tipo de orden es LIMIT
+>lado	Cuerda	Cierto	Orden de dirección
+: COMPRAR
+, vender: VENDER
+>tradeSide	Cuerda	Cierto	Dirección
+solo requerida en modo
+de cobertura Abrir y cerrar Notas:
+Para apertura larga, rellenar el lateral "BUY"; el lado de tradeSide debería estar "ABIERTO"
+Para abrir en corto, rellenar el lado "VENDER"; tradeSide debe estar "ABIERTO"
+Para cerrar largo, rellenar el lado "COMPRAR"; El lado de tradeSide debe estar "CERRADO".
+Para cerrar en corto, rellenar el lado "VENDER"; tradeSide debería estar "CERCA"
+>positionId	Cuerda	falso	ID de posición
+solo se requiere cuando "tradeSide" es "CERCA"
+>TypeorderType	Cuerda	Cierto	Tipo
+de orden LÍMITE: órdenes
+limitadas MERCADO: órdenes de mercado
+>efecto	Cuerda	falso	Fecha de caducidad del pedido.
+Requisito si el orden Tipo es límite
+IOC: Inmediata o cancelar
+FOK: Llenar o matar
+GTC: Válido hasta cancelación (valor por defecto)
+POST_ONLY: Solo POST
+>clientId	Cuerda	falso	Personalizar ID de pedido
+>reduceOnly	Booleano	falso	Si simplemente reducir la posición o no
+>tpPrice	Cuerda	falso	Toma el beneficio Precio de disparo
+>tpStopType	Cuerda	falso	Tipo
+de disparador MARK_PRICE LAST_PRICE
+>tpOrderType	Cuerda	falso	tomar beneficios disparar colocar orden tipo
+LÍMITE
+MERCADO
+>tpOrderPrice	Cuerda	falso	tomar beneficio disparar colocar precio
+de orden
+LÍMITE
+MERCADO requerido si tpOrderType es LÍMITE
+>slPrice	Cuerda	falso	Precio de disparador de stop loss
+>slStopType	Cuerda	falso	Tipo
+de disparador de stop loss MARK_PRICE
+LAST_PRICE
+>slOrderType	Cuerda	falso	Disparador de stop loss Colocar orden tipo
+LÍMITE
+MERCADO
+>slOrderPrice	Cuerda	falso	stop loss trigger colocar precio
+de orden
+LÍMITE
+MERCADO requerido si slOrderType es LÍMITE
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/batch_order' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","orderList":[{"side":"BUY","price":"60000","qty":"0.5","orderType":"LIMIT","reduceOnly":false,"effect":"GTC","clientId":"c12345","tpPrice":"61000","tpStopType":"MARK","tpOrderType":"LIMIT","tpOrderPrice":"61000.1","slPrice":"59000","slStopType":"LAST","slOrderType":"MARKET"},{"side":"SELL","price":"61000","qty":"0.5","orderType":"LIMIT","reduceOnly":false,"effect":"IOC","clientId":"c12346"}]}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+éxitoLista	Lista	Lista de pedidos exitosa
+>id	Cuerda	ID de orden
+>clientId	Cuerda	ID de cliente
+failureLista	Lista	Lista de pedidos fallidos
+>clientId	Cuerda	ID de cliente
+>errorMsg	Cuerda	Error MSG
+>errorCode	Cuerda	Código de error
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"successList":[{"id":"11111","clientId":"22222"}],"failureList":[{"clientId":"22222","errorMsg":"Insufficient balance","errorCode":10012}]},"msg":"Success"}
+
+
+*** Cancelar todos los pedidos
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+cancelar todas las órdenes
+La respuesta exitosa de la interfaz no es necesariamente igual al éxito de la operación; por favor, utilice el mensaje push de websocket como un juicio preciso del éxito de la operación.
+
+Solicitud HTTP
+POST /api/v1/futures/trade/cancel_all_orders
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/cancel_all_orders' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+éxitoLista	Lista	Lista de pedidos exitosa
+>id	Cuerda	ID de orden
+>clientId	Cuerda	ID de cliente
+failureLista	Lista	Lista de pedidos fallidos
+>id	Cuerda	ID de orden
+>clientId	Cuerda	ID de cliente
+>errorMsg	Cuerda	Error MSG
+>errorCode	Cuerda	Código de error
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"successList":[{"orderId":"11111","clientId":"22222"}],"failureList":[{"orderId":"11112","clientId":"22223","errorMsg":"Order status error","errorCode":10013}]},"msg":"Success"}
+
+
+*** Cancelar pedidos
+Límite de tasa: 5 requisitos/seg/uid
+
+Descripción
+Cancelar órdenes
+La respuesta exitosa de la interfaz no es necesariamente igual al éxito de la operación; por favor, utiliza el mensaje push websocket como un juicio preciso del éxito de la operación.
+
+Solicitud HTTP
+POST /api/v1/futures/trade/cancel_orders
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+OrderList	Lista	Cierto	Lista de parámetros de orden
+orderId	Cuerda	falso	ID
+de pedido Se requiere tanto orderId como clientId. Si ambos se introducen, prevalece el orden.
+clientId	Cuerda	falso	Personalizar ID
+de pedido Se requiere tanto orderId como clientId. Si ambos se introducen, prevalece el orden.
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/cancel_orders' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","orderList":[{"orderId":"11111"},{"clientId":"22223"}]}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+éxitoLista	Lista	Lista de pedidos exitosa
+>id	Cuerda	ID de orden
+>clientId	Cuerda	ID de cliente
+failureLista	Lista	Lista de pedidos fallidos
+>id	Cuerda	ID de orden
+>clientId	Cuerda	ID de cliente
+>errorMsg	Cuerda	Error MSG
+>errorCode	Cuerda	Código de error
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"successList":[{"orderId":"11111","clientId":"22222"}],"failureList":[{"orderId":"11112","clientId":"22223","errorMsg":"Order status error","errorCode":10013}]},"msg":"Success"}
+
+** Cerrar todas las posiciones
+Límite de tarifa: 1 requisito/segundo/uid
+
+Descripción
+Cerrar todas las posiciones
+
+Solicitud HTTP
+POST /api/v1/futures/trade/close_all_position
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/close_all_position' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Ejemplo de respuesta
+
+
+{"code":0,"data":"","msg":"Success"}
+
+** Posición de Aproximación por Destellos
+Límite de tasa: 5 requisitos/seg/uid
+
+Descripción
+Posición cercana por id de posición
+
+Solicitud HTTP
+POST /api/v1/futures/trade/flash_close_position
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+PositionId	Cuerda	Cierto	ID de posición
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/flash_close_position' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"positionId":"19848247723672"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+PositionId	Cuerda	ID de posición
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"positionId":"19848247723672"},"msg":"Success"}
+
+*** Obtener pedidos de historial
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Obtén órdenes de historial, ordena por crear tiempo descodificado
+
+Solicitud HTTP
+GET /api/v1/futures/trade/get_history_orders
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+orderId	Cuerda	falso	ID de orden
+clientId	Cuerda	falso	ID de cliente
+Estado	Cuerda	falso	Estado del pedido
+CUMPLIDO CANCELADOPART_FILLED_CANCELEDCADUCADO
+Tipo	Cuerda	falso	Tipo
+de orden LÍMITE
+DE MERCADO incumplimiento todos
+Hora de inicio	int64	falso	Inicio marca de tiempo
+Unix en formato de milisegundos, por ejemplo, 1597026383085
+fin del tiempo	int64	falso	Marca de tiempo de inicio
+Unix en formato de milisegundos, por ejemplo, 1597026683085
+saltar	int64	falso	Número de órdenes de salto por defecto: 0
+Límite	int64	falso	Número de consultas: Máximo: 100, por defecto: 10
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/get_history_orders?symbol=BTCUSDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+OrderList	Lista	Lista de orden
+>orderId	Cuerda	ID de orden
+>símbolo	Cuerda	Par de negociación
+>	Cuerda	Cantidad (moneda base)
+>tradeQty	Cuerda	Cantidad de relleno (moneda base)
+>ModoPosiciónT	Cuerda	ONE_WAY o HEDGE
+>margenMode	Cuerda	AISLAMIENTO o CRUZ
+>apalancamiento	int	Apalancamiento
+> precio	Cuerda	Precio del pedido.
+Obligatorio si el tipo de orden es LIMIT
+>lado	Cuerda	Orden de dirección
+: COMPRAR
+, vender: VENDER
+>TypeorderType	Cuerda	Tipo
+de orden LÍMITE: órdenes
+limitadas MERCADO: órdenes de mercado
+>efecto	Cuerda	Fecha de caducidad del pedido.
+Requisito si el orden Tipo es límite
+IOC: Inmediata o cancelar
+FOK: Llenar o matar
+GTC: Válido hasta cancelación (valor por defecto)
+POST_ONLY: Solo POST
+>clientId	Cuerda	Personalizar ID de pedido
+>reduceOnly	Booleano	Si simplemente reducir la posición o no
+> estado	Cuerda	Estado INIT:p repare
+NUEVO:p final
+PART_FILLED:p arteally lleno
+CANCELADO:cancelado
+LLENADOTodo completado
+>fee	Cuerda	Tasa
+>realizadoPNL	Cuerda	PNL realizado
+>tpPrice	Cuerda	Toma el beneficio Precio de disparo
+>tpStopType	Cuerda	Tipo
+de disparador MARK_PRICE LAST_PRICE
+>tpOrderType	Cuerda	tomar beneficios disparar colocar orden tipo
+LÍMITE
+MERCADO
+>tpOrderPrice	Cuerda	tomar beneficio disparar colocar precio
+de orden
+LÍMITE
+MERCADO requerido si tpOrderType es LÍMITE
+>slPrice	Cuerda	Precio de disparador de stop loss
+>slStopType	Cuerda	Tipo
+de disparador de stop loss MARK_PRICE
+LAST_PRICE
+>slOrderType	Cuerda	Disparador de stop loss Colocar orden tipo
+LÍMITE
+MERCADO
+>slOrderPrice	Cuerda	stop loss trigger colocar precio
+de orden
+LÍMITE
+MERCADO requerido si slOrderType es LÍMITE
+>ctime	int64	crear marca temporal
+>mtime	int64	Última marca de tiempo de la modificación
+total	int64	Recuento total
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderList":[{"orderId":"11111","qty":"1","tradeQty":"0.5","price":"60000","symbol":"BTCUSDT","positionMode":"HEDGE","marginMode":"ISOLATION","leverage":15,"status":"CANCELED","fee":"0.01","realizedPNL":"1.78","type":"LIMIT","effect":"GTC","reduceOnly":false,"clientId":"22222","tpPrice":"61000","tpStopType":"MARK","tpOrderType":"LIMIT","tpOrderPrice":"61000.1","slPrice":"59000","slStopType":"MARK","slOrderType":"LIMIT","slOrderPrice":"59000.1","source":"api","ctime":1597026383085,"mtime":1597026383085}],"total":10},"msg":"Success"}
+
+*** Obtén Historias Comerciales
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Obtén intercambios históricos, ordena por crear tiempo de despeje
+
+Solicitud HTTP
+GET /api/v1/futures/trade/get_history_trades
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+orderId	Cuerda	falso	ID de orden
+PositionId	Cuerda	falso	ID de posición
+Hora de inicio	int64	falso	Inicio marca de tiempo
+Unix en formato de milisegundos, por ejemplo, 1597026383085
+fin del tiempo	int64	falso	Marca de tiempo de inicio
+Unix en formato de milisegundos, por ejemplo, 1597026683085
+saltar	int64	falso	Número de órdenes de salto por defecto: 0
+Límite	int64	falso	Número de consultas: Máximo: 100, por defecto: 10
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/get_history_trades?symbol=BTCUSDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+tradeList	Lista	Lista comercial
+>tradeId	Cuerda	ID comercial
+>orderId	Cuerda	ID de orden
+>símbolo	Cuerda	Par de negociación
+>	Cuerda	Cantidad (moneda base)
+>ModoPosiciónT	Cuerda	ONE_WAY o HEDGE
+>margenMode	Cuerda	AISLAMIENTO o CRUZ
+>apalancamiento	int	Apalancamiento
+> precio	Cuerda	Precio del pedido.
+Obligatorio si el tipo de orden es LIMIT
+>lado	Cuerda	Orden de dirección
+: COMPRAR
+, vender: VENDER
+>TypeorderType	Cuerda	Tipo
+de orden LÍMITE: órdenes
+limitadas MERCADO: órdenes de mercado
+>efecto	Cuerda	Fecha de caducidad del pedido.
+Requisito si el orden Tipo es límite
+IOC: Inmediata o cancelar
+FOK: Llenar o matar
+GTC: Válido hasta cancelación (valor por defecto)
+POST_ONLY: Solo POST
+>clientId	Cuerda	Personalizar ID de pedido
+>reduceOnly	Booleano	Si simplemente reducir la posición o no
+>fee	Cuerda	Tasa
+>realizadoPNL	Cuerda	PNL realizado
+>ctime	int64	crear marca temporal
+>Tipo de rol	Cuerda	Trader tag
+TAKER: maker
+MAKER: maker
+total	int64	Recuento total
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"tradeList":[{"tradeId":"123","orderId":"11111","qty":"1","price":"60000","symbol":"BTCUSDT","positionMode":"HEDGE","marginMode":"ISOLATION","leverage":15,"fee":"0.01","realizedPNL":"1.78","type":"LIMIT","effect":"GTC","reduceOnly":false,"clientId":"22222","source":"api","ctime":1597026383085,"roleType":"TAKER"}],"total":10},"msg":"Success"}
+
+*** Obtener detalles de pedidos
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+obtener Detalle de Orden
+
+Solicitud HTTP
+GET /api/v1/futures/trade/get_order_detail
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+orderId	Cuerda	falso	pedir id Al menos uno de o es necesario.orderIdclientId
+clientId	Cuerda	falso	ID del cliente Al menos uno de los o es obligatorio.orderIdclientId
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/get_order_detail?orderId=12345' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+orderId	Cuerda	ID de orden
+Símbolo	Cuerda	Par de negociación
+Cantidad	Cuerda	Cantidad (moneda base)
+tradeQty	Cuerda	Cantidad de relleno (moneda base)
+PositionMode	Cuerda	ONE_WAY o HEDGE
+marginMode	Cuerda	AISLAMIENTO o CRUZ
+Apalancamiento	int	Apalancamiento
+Precio	Cuerda	Precio del pedido.
+Obligatorio si el tipo de orden es LIMIT
+Side	Cuerda	Orden de dirección
+: COMPRAR
+, vender: VENDER
+Tipo de orden	Cuerda	Tipo
+de orden LÍMITE: órdenes
+limitadas MERCADO: órdenes de mercado
+Efecto	Cuerda	Fecha de caducidad del pedido.
+Requisito si el orden Tipo es límite
+IOC: Inmediata o cancelar
+FOK: Llenar o matar
+GTC: Válido hasta cancelación (valor por defecto)
+POST_ONLY: Solo POST
+clientId	Cuerda	Personalizar ID de pedido
+reduceOnly	Booleano	Si simplemente reducir la posición o no
+Estado	Cuerda	Estado INIT:p repare
+NUEVO:p final
+PART_FILLED:p arteally lleno
+CANCELADO:cancelado
+LLENADOTodo completado
+Tasa	Cuerda	Tasa
+realizedPNL	Cuerda	PNL realizado
+tpPrice	Cuerda	Toma el beneficio Precio de disparo
+tpStopType	Cuerda	Tipo
+de disparador MARK_PRICE LAST_PRICE
+tpOrderType	Cuerda	tomar beneficios disparar colocar orden tipo
+LÍMITE
+MERCADO
+tpOrderPrice	Cuerda	tomar beneficio disparar colocar precio
+de orden
+LÍMITE
+MERCADO requerido si tpOrderType es LÍMITE
+slPrice	Cuerda	Precio de disparador de stop loss
+slStopType	Cuerda	Tipo
+de disparador de stop loss MARK_PRICE
+LAST_PRICE
+slOrderType	Cuerda	Disparador de stop loss Colocar orden tipo
+LÍMITE
+MERCADO
+slOrderPrice	Cuerda	stop loss trigger colocar precio
+de orden
+LÍMITE
+MERCADO requerido si slOrderType es LÍMITE
+ctime	int64	crear marca temporal
+mtime	int64	Última marca de tiempo de la modificación
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderId":"11111","qty":"1","tradeQty":"0.5","price":"60000","symbol":"BTCUSDT","positionMode":"HEDGE","marginMode":"ISOLATION","leverage":15,"status":"PART_FILLED","fee":"0.01","realizedPNL":"1.78","type":"LIMIT","effect":"GTC","reduceOnly":false,"clientId":"22222","tpPrice":"61000","tpStopType":"MARK","tpOrderType":"LIMIT","tpOrderPrice":"61000.1","slPrice":"59000","slStopType":"MARK","slOrderType":"LIMIT","slOrderPrice":"59000.1","source":"api","ctime":1597026383085,"mtime":1597026383085},"msg":"Success"}
+
+
+**** Obtener órdenes pendientes
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+obtener órdenes pendientes, ordenar por crear tiempo desc
+
+Solicitud HTTP
+GET /api/v1/futures/trade/get_pending_orders
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	falso	Par de negociación
+orderId	Cuerda	falso	ID de orden
+clientId	Cuerda	falso	ID de cliente
+Estado	Cuerda	falso	Estado del pedido
+NUEVO o PART_FILLED
+Hora de inicio	int64	falso	Inicio marca de tiempo
+Unix en formato de milisegundos, por ejemplo, 1597026383085
+fin del tiempo	int64	falso	Marca de tiempo de inicio
+Unix en formato de milisegundos, por ejemplo, 1597026683085
+saltar	int64	falso	Número de órdenes de salto por defecto: 0
+Límite	int64	falso	Número de consultas: Máximo: 100, por defecto: 10
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/get_pending_orders?symbol=BTCUSDT' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+OrderList	Lista	Lista de orden
+>orderId	Cuerda	ID de orden
+>símbolo	Cuerda	Par de negociación
+>	Cuerda	Cantidad (moneda base)
+>tradeQty	Cuerda	Cantidad de relleno (moneda base)
+>ModoPosiciónT	Cuerda	ONE_WAY o HEDGE
+>margenMode	Cuerda	AISLAMIENTO o CRUZ
+>apalancamiento	int	Apalancamiento
+> precio	Cuerda	Precio del pedido.
+Obligatorio si el tipo de orden es LIMIT
+>lado	Cuerda	Orden de dirección
+: COMPRAR
+, vender: VENDER
+>TypeorderType	Cuerda	Tipo
+de orden LÍMITE: órdenes
+limitadas MERCADO: órdenes de mercado
+>efecto	Cuerda	Fecha de caducidad del pedido.
+Requisito si el orden Tipo es límite
+IOC: Inmediata o cancelar
+FOK: Llenar o matar
+GTC: Válido hasta cancelación (valor por defecto)
+POST_ONLY: Solo POST
+>clientId	Cuerda	Personalizar ID de pedido
+>reduceOnly	Booleano	Si simplemente reducir la posición o no
+> estado	Cuerda	Estado INIT:p repare
+NUEVO:p final
+PART_FILLED:p arteally lleno
+CANCELADO:cancelado
+LLENADOTodo completado
+>fee	Cuerda	Tasa
+>realizadoPNL	Cuerda	PNL realizado
+>tpPrice	Cuerda	Toma el beneficio Precio de disparo
+>tpStopType	Cuerda	Tipo
+de disparador MARK_PRICE LAST_PRICE
+>tpOrderType	Cuerda	tomar beneficios disparar colocar orden tipo
+LÍMITE
+MERCADO
+>tpOrderPrice	Cuerda	tomar beneficio disparar colocar precio
+de orden
+LÍMITE
+MERCADO requerido si tpOrderType es LÍMITE
+>slPrice	Cuerda	Precio de disparador de stop loss
+>slStopType	Cuerda	Tipo
+de disparador de stop loss MARK_PRICE
+LAST_PRICE
+>slOrderType	Cuerda	Disparador de stop loss Colocar orden tipo
+LÍMITE
+MERCADO
+>slOrderPrice	Cuerda	stop loss trigger colocar precio
+de orden
+LÍMITE
+MERCADO requerido si slOrderType es LÍMITE
+>ctime	int64	crear marca temporal
+>mtime	int64	Última marca de tiempo de la modificación
+total	int64	Recuento total
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderList":[{"orderId":"11111","qty":"1","tradeQty":"0.5","price":"60000","symbol":"BTCUSDT","positionMode":"HEDGE","marginMode":"ISOLATION","leverage":15,"status":"NEW","fee":"0.01","realizedPNL":"1.78","type":"LIMIT","effect":"GTC","reduceOnly":false,"clientId":"22222","tpPrice":"61000","tpStopType":"MARK","tpOrderType":"LIMIT","tpOrderPrice":"61000.1","slPrice":"59000","slStopType":"MARK","slOrderType":"LIMIT","slOrderPrice":"59000.1","source":"api","ctime":1597026383085,"mtime":1597026383085}],"total":10},"msg":"Success"}
+
+
+*** Orden de modificación
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Interfaz para la modificación de pedidos, utilizada para modificar un pedido pendiente, como su TP/SL y/o precio/quantidad. ¡Atención! Una respuesta exitosa de la interfaz no es necesariamente igual al éxito de la operación; por favor, utiliza el mensaje push de websocket como un juicio preciso del éxito de la operación.
+
+Solicitud HTTP
+POST /api/v1/futures/trade/modify_order
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+orderId	Cuerda	falso	ID
+de pedido Se requiere tanto orderId como clientId. Si ambos se introducen, prevalece el orden.
+clientId	Cuerda	falso	Personalizar ID
+de pedido Se requiere tanto orderId como clientId. Si ambos se introducen, prevalece el orden.
+Cantidad	Cuerda	Cierto	Cantidad (moneda base)
+Precio	Cuerda	Cierto	Precio del pedido.
+Obligatorio si el tipo de orden es LIMIT
+tpPrice	Cuerda	falso	Toma el beneficio Precio de disparo
+tpStopType	Cuerda	falso	Tipo
+de disparador MARK_PRICE LAST_PRICE
+tpOrderType	Cuerda	falso	tomar beneficios disparar colocar orden tipo
+LÍMITE
+MERCADO
+tpOrderPrice	Cuerda	falso	tomar beneficio disparar colocar precio
+de orden
+LÍMITE
+MERCADO requerido si tpOrderType es LÍMITE
+slPrice	Cuerda	falso	Precio de disparador de stop loss
+slStopType	Cuerda	falso	Tipo
+de disparador de stop loss MARK_PRICE
+LAST_PRICE
+slOrderType	Cuerda	falso	Disparador de stop loss Colocar orden tipo
+LÍMITE
+MERCADO
+slOrderPrice	Cuerda	falso	stop loss trigger colocar precio
+de orden
+LÍMITE
+MERCADO requerido si slOrderType es LÍMITE
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/modify_order' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"orderId":"1111","symbol":"BTCUSDT","price":"60000","qty":"0.5","tpPrice":"61000","tpStopType":"MARK","tpOrderType":"LIMIT","tpOrderPrice":"61000.1"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+orderId	Cuerda	ID de orden
+clientId	Cuerda	ID de cliente
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderId":"11111","clientId":"22222"},"msg":"Success"}
+
+*** Orden de los lugares
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+Orden de colocación
+
+Solicitud HTTP
+POST /api/v1/futures/trade/place_order
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Símbolo	Cuerda	Cierto	Par de negociación
+Cantidad	Cuerda	Cierto	Cantidad (moneda base)
+Precio	Cuerda	falso	Precio del pedido.
+Obligatorio si el tipo de orden es LIMIT
+Side	Cuerda	Cierto	Orden de dirección
+: COMPRAR
+, vender: VENDER
+Lado del comercio	Cuerda	Cierto	Dirección
+solo requerida en modo
+de cobertura Abrir y cerrar Notas:
+Para apertura larga, rellenar el lateral "BUY"; el lado de tradeSide debería estar "ABIERTO"
+Para abrir en corto, rellenar el lado "VENDER"; tradeSide debe estar "ABIERTO"
+Para cerrar largo, rellenar el lado "COMPRAR"; El lado de tradeSide debe estar "CERRADO".
+Para cerrar en corto, rellenar el lado "VENDER"; tradeSide debería estar "CERCA"
+PositionId	Cuerda	falso	ID de posición
+solo se requiere cuando "tradeSide" es "CERCA"
+Tipo de orden	Cuerda	Cierto	Tipo
+de orden LÍMITE: órdenes
+limitadas MERCADO: órdenes de mercado
+Efecto	Cuerda	falso	Fecha de caducidad del pedido.
+Requisito si el orden Tipo es límite
+IOC: Inmediata o cancelar
+FOK: Llenar o matar
+GTC: Válido hasta cancelación (valor por defecto)
+POST_ONLY: Solo POST
+clientId	Cuerda	falso	Personalizar ID de pedido
+reduceOnly	Booleano	falso	Si simplemente reducir la posición o no
+tpPrice	Cuerda	falso	Toma el beneficio Precio de disparo
+tpStopType	Cuerda	falso	Tipo
+de disparador MARK_PRICE LAST_PRICE
+tpOrderType	Cuerda	falso	tomar beneficios disparar colocar orden tipo
+LÍMITE
+MERCADO
+tpOrderPrice	Cuerda	falso	tomar beneficio disparar colocar precio
+de orden
+LÍMITE
+MERCADO requerido si tpOrderType es LÍMITE
+slPrice	Cuerda	falso	Precio de disparador de stop loss
+slStopType	Cuerda	falso	Tipo
+de disparador de stop loss MARK_PRICE
+LAST_PRICE
+slOrderType	Cuerda	falso	Disparador de stop loss Colocar orden tipo
+LÍMITE
+MERCADO
+slOrderPrice	Cuerda	falso	stop loss trigger colocar precio
+de orden
+LÍMITE
+MERCADO requerido si slOrderType es LÍMITE
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/futures/trade/place_order' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"symbol":"BTCUSDT","side":"BUY","price":"60000","qty":"0.5","positionId":"111","tradeSide":"CLOSE","orderType":"LIMIT","reduceOnly":false,"effect":"GTC","clientId":"1110000aaa","tpPrice":"61000","tpStopType":"MARK","tpOrderType":"LIMIT","tpOrderPrice":"61000.1"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+orderId	Cuerda	ID de orden
+clientId	Cuerda	ID de cliente
+Ejemplo de respuesta
+
+
+{"code":0,"data":{"orderId":"11111","clientId":"22222"},"msg":"Success"}
+
+*** Consulta de activos
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+La interfaz se utiliza para consultar recursos.
+
+Solicitud HTTP
+GET /api/v1/cp/asset/query
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Ejemplo de solicitud
+
+
+curl -X 'GET'  --location 'https://fapi.bitunix.com/api/v1/cp/asset/query' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "timestamp:1659076670000" \
+   -H "nonce:your-nonce" \
+   -H "language:en-US"
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Disponible	Cuerda	Futuros disponibles
+maxTransfer	Cuerda	Cantidad máxima de transferencia
+Ejemplo de respuesta
+
+
+{"code":0,"msg":"result.success","data":{"available":"54.20916","maxTransfer":"52.20916"},"success":true}
+
+*** transferir activo de la cuenta principal a la subcuenta
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+La interfaz se utiliza para transferir activos de la cuenta principal a la subcuenta.
+
+Solicitud HTTP
+POST /api/v1/cp/activo/transferir-a-sub-cuenta
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Cantidad	Cuerda	Cierto	Cantidad de transferencia
+Tipo de activo	Cuerda	Cierto	Los activos se transfieren desde la cuenta de futuros o la cuenta spot de la cuenta principal. por ejemplo: FUTUROS/SPOT
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/cp/asset/transfer-to-sub-account' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "nonce:your-nonce" \
+   -H "timestamp:1659076670000" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"amount":"10","assetType":"SPOT"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Ejemplo de respuesta
+
+
+{"code":0,"msg":"result.success","data":"","success":true}
+
+*** transferir activo de la subcuenta a la cuenta principal
+Límite de tarifa: 10 requisitos/seg/uid
+
+Descripción
+La interfaz se utiliza para transferir activos de la subcuenta a la cuenta principal.
+
+Solicitud HTTP
+POST /api/v1/cp/asset/transferir-a-cuenta-principal
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+Cantidad	Cuerda	Cierto	Cantidad de transferencia
+Tipo de activo	Cuerda	Cierto	Los activos se transfieren a la cuenta de futuros o cuenta spot de la cuenta principal. por ejemplo: SOPT/FUTUROS
+Ejemplo de solicitud
+
+
+curl -X 'POST'  --location 'https://fapi.bitunix.com/api/v1/cp/asset/transfer-to-main-account' \
+   -H "api-key:*******" \
+   -H "sign:*" \
+   -H "timestamp:1659076670000" \
+   -H "nonce:your-nonce" \
+   -H "language:en-US" \
+   -H "Content-Type: application/json" \
+ --data '{"amount":"10","assetType":"SPOT"}'
+Parámetros de respuesta
+Parámetro	Tipo	Descripción
+Ejemplo de respuesta
+
+
+{"code":0,"msg":"result.success","data":"","success":true}
+
+**** Websocket API
+WebSocket es un nuevo protocolo HTML5 que logra la transmisión de datos dúplex completo entre el cliente y el servidor, permitiendo que los datos se transfieran eficazmente en ambas direcciones. Se puede establecer una conexión entre el cliente y el servidor con un solo apretón de manos. El servidor podrá entonces enviar datos al cliente según reglas preestablecidas. Sus ventajas incluyen:
+
+El tamaño de la cabecera de la solicitud WebSocket para la transmisión de datos entre cliente y servidor es solo de 2 bytes.
+Tanto el cliente como el servidor pueden iniciar la transmisión de datos.
+No es necesario crear y eliminar conexiones TCP repetidamente, ahorrando recursos en ancho de banda y servidor.
+OpenAPI Demo
+Puedes rellenar tu clave API y el secreto de la API para intentar ejecutar la demo oficial proporcionada.
+
+Github Demo
+
+Se recomienda encarecidamente que los desarrolladores utilicen la API WebSocket para obtener información de mercado y profundidad de transacciones.
+
+Dominio	WebSocket API	Recomendado para usar
+Dominio Websocket	wss://fapi.bitunix.com/public/	Dominio principal, canal público
+Dominio Websocket	wss://fapi.bitunix.com/private/	Dominio principal, canal privado
+Ping
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, ping
+ping	int64	Sí	Formato de segundos de la marca de tiempo de Unix
+Ejemplo de solicitud:
+
+
+{
+   "op":"ping",
+   "ping":1732519687 
+}
+Ejemplo de respuesta:
+
+
+{
+   "op":"ping",
+   "pong":1732519687,
+   "ping":1732519690
+}
+Conectar
+Límite de suscripción: Máximo 300 canales de suscripción/conexión
+
+suscríbete
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operar, suscríbete
+args	Matriz	Sí	Lista de canales suscritos
+> ch	Cuerda	Sí	Nombre del canal
+> símbolo	Cuerda	No	ID de instrumento
+Ejemplo de solicitud:
+
+
+{
+    "op":"subscribe",
+    "args":[
+        {
+            "symbol":"BTCUSDT",
+            "ch":"market_kline_1min" 
+        },
+        {
+            "symbol":"BTCUSDT",
+            "ch":"depth_books" 
+        }
+    ]
+}
+cancelar suscripción
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, cancelar suscripción
+args	Matriz	Sí	Lista de canales suscritos
+> ch	Cuerda	Sí	Nombre del canal
+> símbolo	Cuerda	No	ID de instrumento
+Ejemplo de solicitud:
+
+
+{
+    "op":"unsubscribe",
+    "args":[
+        {
+            "symbol":"BTCUSDT",
+            "channel":"market_kline_1min"   
+        }
+    ]
+}
+Iniciar sesión
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, inicio de sesión
+args	Matriz	Sí	
+> apiKey	Cuerda	Sí	Clave API
+> marca temporal	Int	Sí	Formato de segundos de la marca de tiempo de Unix
+> nuncio	Cuerda	Sí	Cadena aleatoria
+> cartel	Cuerda	Sí	Cadena característica
+Ejemplo de solicitud:
+
+
+{
+   "op":"login",
+   "args":[
+         {
+             "apiKey":"a91ma19akoo5kjihgvnkllohs61cvdf19v8a65a1a5s61cv6a81va65sdf19v8a65a1",
+             "timestamp": 1747402389682,
+             "nonce":"o9jnhu8ijko2nbhy36fgt0mnjuyhgtsh",
+             "sign":"kkogbwoehuoenlbgagogheooeggehn939uh5gelqq33"
+         }
+   ]
+}
+Preparación para el acceso
+Si necesitas usar la API, por favor inicia sesión para completar la aplicación de la clave API y la configuración, y luego desarrolla y opera según los detalles de este documento.
+
+Puedes hacer clic aquí para crear una clave API.
+
+Por favor, recuerda la siguiente información después de haber creado con éxito la clave API:
+
+APIKey: Identidad para transacciones API, generada por algoritmo aleatorio.
+SecretKey: clave privada, generada aleatoriamente por el sistema, utilizada para la generación de firmas.
+Riesgos: Estas dos claves están estrechamente relacionadas con la seguridad de tu cuenta, por favor ten en cuenta que no las reveles a otros en ningún momento. Cualquier fuga de estas dos llaves puede causar la pérdida de tus activos. Si encuentras alguna filtración de APIKey, por favor elimina el APIKey lo antes posible.
+
+Tipo de interfaz
+Público
+Interfaz privada
+Interfaz Pública
+La interfaz pública puede utilizarse para obtener información de configuración y datos de mercado. Las solicitudes públicas pueden invocarse sin autenticación.
+
+Interfaz privada
+La interfaz privada puede utilizarse para la gestión de pedidos y de cuentas. Cada solicitud privada debe ser [firmada] (sign.md) utilizando una forma canónica de autenticación. La interfaz privada requiere autenticación usando tu APIKey.
+
+Ve
+
+
+func Sign() string {
+	apiKey := "your-apiKey"
+	secretKey := "your-secretKey"
+	nonce := "your-nonce"
+	timestamp := time.Now().Unix()
+	sign := sha256Hash(fmt.Sprintf("%s%d%s", nonce, timestamp, apiKey))
+	sign = sha256Hash(fmt.Sprintf("%s%s", sign, secretKey))
+
+	return sign
+}
+
+func sha256Hash(input string) string {
+	hash := sha256.New()
+	hash.Write([]byte(input))
+	hashInBytes := hash.Sum(nil)
+	hashInHex := hex.EncodeToString(hashInBytes)
+
+	return hashInHex
+}
+Python
+
+
+import hashlib
+import time
+
+def sign():
+    api_key = "your-apiKey"
+    secret_key = "your-secretKey"
+    nonce = "your-nonce"
+    timestamp = int(time.time())
+
+    # First SHA-256 hash
+    sign = hashlib.sha256((nonce + str(timestamp) + api_key).encode()).hexdigest()
+
+    # Second SHA-256 hash
+    sign = hashlib.sha256((sign + secret_key).encode()).hexdigest()
+
+    return sign
+
+
+**** Descripción
+Equilibrio
+
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Nombre del canal: posición
+ts	Int64	Marca temporal
+Datos	<Objeto>	
+> moneda	Cuerda	Moneda
+> disponible	Cuerda	Disponible
+> congelado	Cuerda	Congelado = aislamientoCongelado + cruzCongelado
+> aislamientoCongelado	Cuerda	Congela por almacén
+> cruzFrozen	Cuerda	Congelación encargada de almacén completo
+> margen	Cuerda	Margen
+> aislamientoMargen	Cuerda	Almacén por margen de almacén.
+> Margen cruzado	Cuerda	Margen total del almacén.
+> expMoney	Cuerda	Experimenta el dinero.
+
+
+*** Descripción
+Canal de suscripción al pedido
+
+Los datos se enviarán cuando ocurran los siguientes eventos:
+
+Se crean órdenes de apertura/cierre
+Se cumplen los pedidos de Apertura/Cierre
+Pedidos cancelados
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Nombre del canal: posición
+ts	Int64	Marca temporal
+Datos	<Objeto>	Datos de suscripción
+> evento	Cuerda	Evento, CREAR/ACTUALIZAR/CERRAR
+> orderId	Cuerda	orden Id
+> símbolo	Cuerda	Símbolo
+> Tipo de posición	Cuerda	Modo de margen, AISLAMIENTO/CRUZ
+> Modo de posición	Cuerda	Modo de posición, ONE_WAY/HEDGE
+> lado	Cuerda	Vender, COMPRAR/VENDER
+> efecto	Cuerda	Fecha de caducidad del pedido. Es obligatorio si el Tipo de Orden es límite. COI: Inmediata o cancelada; FOK: Rellenar o matar; GTC: Válido hasta cancelado (valor por defecto); POST_ONLY: Solo POST;
+> tipo	Cuerda	LÍMITE/MERCADO
+> cantidad	Cuerda	Cantidad (moneda base)
+> precio	Cuerda	Precio del pedido. Obligatorio si el tipo de orden es LIMIT
+> ctime	Cuerda	crear marca temporal
+> mtime	Cuerda	crear marca temporal
+> palanca	Cuerda	Apalancamiento
+> estado de la orden	Cuerda	INIT: preparar estado; NUEVO:pendiente; PART_FILLED: parcialmente lleno; CANCELADO:cancelado; FILLADAn llena; PART_FILLED_CANCELED: parte llena cancelada;
+> tarifa	Cuerda	Comisiones de transacción deducidas: comisiones de transacción deducidas durante la posición
+> precio medio	Cuerda	Precio medio
+> trato Cantidad	Cuerda	Cantidad de la distribución
+> clientId	Cuerda	ID de cliente
+> tpStopType	Cuerda	Tipo de disparador de beneficio para tomar beneficio. MARK_PRICE/LAST_PRICE
+> tpPrice	Cuerda	Precio de activación de beneficio por tomar
+> tpOrderType	Cuerda	Toma beneficios, activa el tipo de pedido. LÍMITE/MERCADO
+> tpOrderPrice	Cuerda	Toma beneficios, activa el precio de la orden. LÍMITE/MERCADO
+> slStopType	Cuerda	Tipo de disparador de stop loss. MARK_PRICE/LAST_PRICE
+> precio	Cuerda	Precio de disparo stop loss
+> slOrderType	Cuerda	Disparador de stop loss tipo de pedido para colocar. LÍMITE/MERCADO
+> slOrderPrice	Cuerda	Stop loss trigger coloca precio de pedido. LÍMITE/MERCADO
+
+
+*** Descripción
+Suscribirse al canal de posición
+
+Los datos se enviarán cuando ocurran los siguientes eventos:
+
+Se crean órdenes de apertura/cierre
+Se cumplen los pedidos de Apertura/Cierre
+Se cancelan los pedidos
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Nombre del canal: posición
+ts	Int64	Marca temporal
+Datos	<Objeto>	Datos de suscripción
+> evento	Cuerda	Evento, ABRIR/ACTUALIZAR/CERRAR
+> PositionId	Cuerda	Identificación de posición
+> margenMode	Cuerda	Modo de margen, AISLAMIENTO/CRUZ
+> Modo de posición	Cuerda	Modo de posición, ONE_WAY/HEDGE
+> lado	Cuerda	Dirección de posición, CORTO/LARGO
+> palanca	Cuerda	Apalancamiento
+> margen	Cuerda	Margen
+> ctime	Cuerda	Crear tiempo
+> cantidad	Cuerda	Tamaño de la posición abierta
+> símbolo	Cuerda	Símbolo
+> realizado PNL	Cuerda	PnL realizado (excluyendo la comisión de financiación y la comisión de transacción)
+> PNL no realizado	Cuerda	PnL no realizado
+> financiación	Cuerda	Cuota total de financiación durante el puesto
+> tarifa	Cuerda	Comisiones de transacción deducidas: comisiones de transacción deducidas durante la posición
+
+
+*** Descripción
+Orden TP/SL
+
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Nombre del canal: posición
+ts	Int64	Marca temporal
+Datos	<Objeto>	Datos de suscripción
+> evento	Cuerda	Evento, CREAR/ACTUALIZAR/CERRAR
+> PositionId	Cuerda	Identificación de posición
+> orderId	Cuerda	orden Id
+> símbolo	Cuerda	Símbolo
+> palanca	Cuerda	Apalancamiento
+> lado	Cuerda	Vender, COMPRAR/VENDER
+> Modo de posición	Cuerda	Modo de posición, ONE_WAY/HEDGE
+> estado	Cuerda	INIT: preparar estado; NUEVO:pendiente; PART_FILLED: parcialmente lleno; CANCELADO:cancelado; FILLEDAll lleno
+> ctime	Cuerda	crear marca temporal
+> tipo	Cuerda	LÍMITE/MERCADO
+> tpQty	Cuerda	Cantidad de orden de take-profit (moneda base) Al menos uno de o es obligatorio.tpQtyslQty
+> slQty	Bool	Cantidad de orden stop-loss (moneda base). Se requiere al menos una de tpqty o slQty.
+> tpStopType	Cuerda	Toma el tipo de disparador de beneficios. MARK_PRICE/LAST_PRICE
+> tpPrice	Cuerda	Toma el beneficio Precio de disparo
+> tpOrderType	Cuerda	Toma beneficios, activa el tipo de pedido. LÍMITE/MERCADO
+> tpOrderPrice	Cuerda	Toma beneficios, activa el precio de la orden. LÍMITE/MERCADO
+> slStopType	Cuerda	Tipo de disparador de pérdida de stop. MARK_PRICE/LAST_PRICE
+> precio	Cuerda	Precio de disparador de stop loss
+> slOrderType	Cuerda	Stop loss trigger coloca el tipo de pedido. LÍMITE/MERCADO
+> slOrderPrice	Cuerda	Stop loss Trigger Colocar el precio de la orden. LÍMITE/MERCADO
+
+*** Descripción
+Úsalo para datos de instantáneas, para 1 nivel de profundidad, para 5 niveles de profundidad, para 15 niveles de profundidad.booksbook1book5book15
+
+books: Empujar los datos completos por primera vez, luego empujar todos los datos, es decir, si hay un cambio en la profundidad, los datos de profundidad que han cambiado serán impulsados.snapshot
+book1: 1 nivel de profundidad se pondrá a prueba cada vez.
+book5: 5 niveles de profundidad se pondrán a prueba cada vez.
+book15: 15 niveles de profundidad se pondrán cada vez.
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, suscribirse cancelar suscripción
+args	Lista<Objeto>	Sí	Lista de canales para solicitar suscripción
+> ch	Cuerda	Sí	Nombre del canal: depth_books,depth_book1,depth_book5,depth_book15
+> símbolo	Cuerda	Sí	ID del producto
+Ejemplo de solicitud:
+
+
+{
+    "op":"subscribe",
+    "args":[
+        {
+            "symbol":"BTCUSDT",
+            "ch":"depth_book1"  
+        }
+    ]
+}
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Objetivo	Nombre del canal
+Símbolo	Cuerda	ID del producto
+ts	Int64	Marca temporal
+Datos	Cuerda	Datos de suscripción
+> un	Lista<Cuerda>	Profundidad de vendedores
+> b	Lista<Cuerda>	Profundidad de comprador
+Datos PUSH:
+
+
+{
+  "ch": "depth_book1",               
+  "symbol": "BTCUSDT",
+  "ts": 1732178884994,
+  "data":{                               
+        "b":[                            
+             [
+                  "7403.89",             
+                  "0.002"                
+             ]
+            ],
+        "a": [                           
+             [
+                 "7405.96",              
+                 "3.340"                 
+             ]
+        ]
+   }
+}
+
+*** Descripción
+Recupera los datos de los candelabros de un símbolo. Los datos se enviarán cada 500 ms.
+
+El canal publicará una instantánea tras la suscripción exitosa, seguida de actualizaciones posteriores.
+
+Para cambiar los intervalos de K-line sin desconectar el WebSocket, primero debes enviar un comando de "cancelar la suscripción" para cancelar la suscripción K-line anterior antes de suscribirte al nuevo intervalo. Por ejemplo, si actualmente estás suscrito a mark_kline_1min y quieres cambiar a mark_kline_15min, primero debes darte de baja de mark_kline_1min y luego suscribirte a mark_kline_15min.
+
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, suscribirse cancelar suscripción
+args	Lista<Objeto>	Sí	Lista de canales para solicitar suscripción
+> ch	Cuerda	Sí	Nombre del canal, El canal de suscripción es: Tipode precio klineIntervalo de tiempo; Los tipos de precios incluyen precio de mercado y precio marcado;market_kline_1min,mark_kline_1min,market_kline_3min,mark_kline_3min,market_kline_5min,mark_kline_5min,market_kline_15min,mark_kline_15min,market_kline_30min,mark_kline_30min,market_kline_60min,mark_kline_60min,market_kline_2h,mark_kline_2h,market_kline_4h,mark_kline_4h,market_kline_6h,mark_kline_6h,market_kline_ 8h,mark_kline_8h,market_kline_12h,mark_kline_12h,market_kline_1day,mark_kline_1day,market_kline_3day,mark_kline_3day,market_kline_3day,market_kline_1week,mark_kline_1week,market_kline_1month,mark_ kline_1month
+> símbolo	Cuerda	Sí	ID de producto: por ejemplo, ETHUSDT
+Ejemplo de solicitud:
+
+
+{
+    "op":"subscribe",
+    "args":[
+        {
+            "symbol":"BTCUSDT",
+            "ch":"market_kline_1min" 
+        }
+    ]
+}
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Nombre del canal
+Símbolo	Cuerda	ID de producto: por ejemplo, ETHUSDT
+ts	int64	Marca temporal
+Datos	Lista<Cuerda>	Datos de suscripción
+> o	Cuerda	Precio de apertura
+> h	Cuerda	Precio más alto
+> l	Cuerda	Precio más bajo
+> c	Cuerda	Precio de cierre
+> b	Cuerda	Volumen de negociación de la moneda
+> q	Cuerda	Volumen de negociación de la moneda cotizada
+Datos PUSH:
+
+
+{ 
+  "ch": "mark_kline_1min",
+  "symbol": "BNBUSDT",
+  "ts": 1732178884994,                   
+  "data":{
+      "o": "0.0010",                     
+      "c": "0.0020",                     
+      "h": "0.0025",                     
+      "l": "0.0015",                    
+      "b": "1.01",                     
+      "q": "1.09"                         
+  }
+}
+
+
+*** Descripción
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, suscribirse cancelar suscripción
+args	Lista<Objeto>	Sí	En la lista
+> símbolo	Cuerda	Sí	ID de producto, por ejemplo: ETHUSDT
+> ch	Cuerda	Sí	Canal, precio
+Ejemplo de solicitud:
+
+
+{
+    "op":"subscribe",
+    "args":[
+        {
+            "symbol":"BTCUSDT",
+            "ch":"price"  
+        }
+    ]
+}
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Nombre del canal
+Símbolo	Cuerda	ID de producto: por ejemplo, ETHUSDT
+ts	int64	Marca temporal
+Datos	Lista<Cuerda>	Datos de suscripción
+> MP	Cuerda	Precio de mercado
+> IP	Cuerda	Precio índice
+> fr	Cuerda	Tasa de financiación
+> pies	Cuerda	Plazo de liquidación de la tasa de financiación
+> NFT	Cuerda	Siguiente momento de liquidación de la tasa de financiación, formato de milisegundos de Unix con marca temporal, por ejemplo, 1597026383085
+Datos PUSH:
+
+
+{ 
+  "ch": "price",                   
+  "symbol": "BNBUSDT",
+  "ts": 1732178884994,
+  "data":{
+        "ip": "0.0010",                 
+        "mp": "10000",                  
+        "fr": "0.013461" ,                    
+        "ft": "2024-12-04T11:00:00Z",                 
+        "nft": "2024-12-04T12:00:00Z"                           
+   }   
+}
+
+*** Descripción
+Estadísticas de mini-ticker de ventana móvil de 24 horas para todos los símbolos. Estas NO son las estadísticas del día UTC, sino una ventana móvil de 24 horas desde requestTime hasta 24 horas antes.
+
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, suscribirse cancelar suscripción
+args	Lista<Objeto>	Sí	
+> símbolo	Cuerda	Sí	ID de producto, por ejemplo: ETHUSDT
+> ch	Cuerda	Sí	Canal, ticker
+Ejemplo de solicitud:
+
+
+{
+    "op":"subscribe",
+    "args":[
+        {
+            "symbol":"BTCUSDT",
+            "ch":"ticker" 
+        }
+    ]
+}
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Nombre del canal
+Símbolo	Cuerda	ID de producto: por ejemplo, ETHUSDT
+ts	int64	Marca temporal
+Datos	Lista<Cuerda>	Datos de suscripción
+> o	Cuerda	Precio de apertura
+> h	Cuerda	Precio más alto
+> l	Cuerda	Precio más bajo
+> el	Cuerda	Último precio
+> b	Cuerda	Volumen de negociación de la moneda
+> q	Cuerda	Volumen de negociación de la moneda cotizada
+> r	Cuerda	Fluctuaciones de 24 horas
+Datos PUSH:
+
+
+{ 
+  "ch": "ticker",                   
+  "symbol": "BNBUSDT",
+  "ts": 1732178884994,
+  "data":{
+        "la": "0.0025",                 
+        "o": "0.0010",                 
+        "h": "0.0025",                 
+        "l": "0.0010",                 
+        "b": "10000",                 
+        "q": "1" ,                     
+        "r":"0.98"                    
+   }   
+}
+
+
+**** Descripción
+Estadísticas de mini-ticker de ventana móvil de 24 horas para todos los símbolos (estos son datos agregados de tickers de flujo, con una estructura de datos diferente en comparación con la suscripción individual de tickers). Estas estadísticas no se basan en datos diarios UTC, sino en una ventana móvil de 24 horas desde el tiempo de la solicitud hacia atrás.
+
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, suscribirse cancelar suscripción
+args	Lista<Objeto>	Sí	
+> símbolo	Cuerda	Sí	ID de producto, por ejemplo: ETHUSDT
+> ch	Cuerda	Sí	Canal, tickers
+Ejemplo de solicitud:
+
+
+{
+	"op": "subscribe",
+	"args": [{
+			"symbol": "BTCUSDT",
+			"ch": "tickers"
+		},
+		{
+			"symbol": "ETHUSDT",
+			"ch": "tickers"
+		}
+	]
+}
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Nombre del canal
+ts	int64	Marca temporal
+Datos	Lista<Cuerda>	Datos de suscripción
+> s	Cuerda	símbolo, ID de producto E.g. ETHUSDT
+> o	Cuerda	Precio de apertura
+> h	Cuerda	Precio más alto
+> l	Cuerda	Precio más bajo
+> el	Cuerda	Último precio
+> b	Cuerda	Volumen de negociación de la moneda
+> q	Cuerda	Volumen de negociación de la moneda cotizada
+> r	Cuerda	Fluctuaciones de 24 horas
+> bd	Cuerda	Mejor precio de puja
+> ak	Cuerda	Mejor precio de venta
+> BV	Cuerda	Mejor Volumen de Oferta
+> av	Cuerda	Mejor volumen de preguntas
+Datos PUSH:
+
+
+{ 
+  "ch": "tickers",
+  "ts": 1732178884994,
+  "data":[
+    {
+        "s": "BTCUSDT",
+        "la": "0.0025",                 
+        "o": "0.0010",                 
+        "h": "0.0025",                 
+        "l": "0.0010",                 
+        "b": "10000",                 
+        "q": "1" ,                     
+        "r": "0.98",
+        "bd":"1549.41",           
+        "ak":"1549.42",  
+        "bv":"21.737",  
+        "av":"19.853"
+   },
+   {
+        "s": "ETHUSDT",
+        "la": "0.0025",                 
+        "o": "0.0010",                 
+        "h": "0.0025",                 
+        "l": "0.0010",                 
+        "b": "10000",                 
+        "q": "1" ,                     
+        "r":"0.98",
+        "bd":"1549.41",           
+        "ak":"1549.42",  
+        "bv":"21.737",  
+        "av":"19.853"               
+   }
+  ]
+}
+
+
+**** Descripción
+Obtén los datos de las operaciones públicas
+
+Parámetros de la solicitud
+Parámetro	Tipo	Obligatorio	Descripción
+en	Cuerda	Sí	Operación, suscribirse cancelar suscripción
+args	Lista<Objeto>	Sí	En la lista
+> símbolo	Cuerda	Sí	ID de producto, por ejemplo: ETHUSDT
+> ch	Cuerda	Sí	Canal, comercio
+Ejemplo de solicitud:
+
+
+{
+    "op":"subscribe",
+    "args":[
+        {
+            "symbol":"BTCUSDT",
+            "ch":"trade"  
+        }
+    ]
+}
+Parámetros de empuje
+Parámetro	Tipo	Descripción
+ch	Cuerda	Channel, trade
+Símbolo	Cuerda	Símbolo: ETHUSDT
+ts	Cuerda	Marca temporal
+Datos	Lista<Objeto>	Datos
+> p	Cuerda	Precio de relleno
+> v	Cuerda	Cantidad rellenada
+> s	Cuerda	Lado lleno, vender/comprar
+> t	Cuerda	Marca temporal
+Datos PUSH:
+
+
+{ 
+  "ch": "trade",                   
+  "symbol": "BNBUSDT",
+  "ts": 1732178884994,
+  "data": [
+        {
+            "t": "2024-12-04T11:36:47.959908526Z",   
+            "p": "27000.5",         
+            "v": "0.001",           
+            "s": "buy"             
+        },
+        {
+            "t": "2024-12-04T11:36:47.959908526Z",
+            "p": "27000.0",
+            "v": "0.001",
+            "s": "sell"
+        }
+    ]
+}
+
